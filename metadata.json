@@ -1,0 +1,6 @@
+{
+  "name": "Happy Birthday, My Future Wife",
+  "description": "A deeply romantic, customizable mobile web page celebrating long-distance love, virtual memories, and the countdown to meeting in person.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
