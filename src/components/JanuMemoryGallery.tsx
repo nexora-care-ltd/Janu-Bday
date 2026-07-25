@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, Heart, Upload, Image as ImageIcon, ZoomIn, X, RotateCcw, Award, Calendar, CheckCircle2, ShieldCheck, Stars } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sparkles, Heart, ZoomIn, X, Award, Calendar, ShieldCheck, Stars, Upload, Download, RefreshCw, CheckCircle2, Database, Camera, Trash2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { getAllPhotos, savePhoto, compressImage, exportPhotosBackup, importPhotosBackup, clearAllPhotos } from '../utils/photoStorage';
 
 interface JanuPhotoCard {
   id: number;
@@ -196,83 +197,118 @@ const JANU_MEMORIES: JanuPhotoCard[] = [
 ];
 
 export const JanuMemoryGallery: React.FC = () => {
-  const [customPhotos, setCustomPhotos] = useState<{ [key: string]: string }>({});
   const [activeModalImg, setActiveModalImg] = useState<{ url: string; title: string; caption: string } | null>(null);
   const [likeCounts, setLikeCounts] = useState<{ [key: number]: number }>({
     1: 389, 2: 450, 3: 999, 4: 520, 5: 610, 6: 777, 7: 888, 8: 415, 9: 1000,
     10: 850, 11: 920, 12: 890, 13: 950, 14: 870, 15: 999, 16: 780, 17: 1000, 18: 888, 19: 999, 20: 1000
   });
 
-  useEffect(() => {
-    // Load saved photos from localStorage
-    const loaded: { [key: string]: string } = {};
-    JANU_MEMORIES.forEach(item => {
-      const saved = localStorage.getItem(item.storageKey);
-      if (saved) {
-        loaded[item.storageKey] = saved;
-      }
-    });
-    setCustomPhotos(loaded);
+  const [customPhotos, setCustomPhotos] = useState<{ [key: string]: string }>({});
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [showManager, setShowManager] = useState(true);
+  const [backupMessage, setBackupMessage] = useState<string | null>(null);
+
+  const loadPhotos = async () => {
+    try {
+      const photos = await getAllPhotos();
+      setCustomPhotos(photos);
+    } catch (e) {
+      console.error('Error loading permanent photos:', e);
+    }
+  };
+
+  React.useEffect(() => {
+    loadPhotos();
   }, []);
 
-  const handleFileUpload = (storageKey: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        localStorage.setItem(storageKey, base64String);
-        setCustomPhotos(prev => ({ ...prev, [storageKey]: base64String }));
-        confetti({
-          particleCount: 50,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#e11d48', '#f9a8d4', '#ffd700', '#ffffff']
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleBulkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    setIsUploading(true);
+    setUploadProgress({ current: 0, total: Math.min(files.length, 20) });
 
-    const count = Math.min(files.length, JANU_MEMORIES.length);
-    for (let i = 0; i < count; i++) {
-      const file = files[i];
-      if (file) {
-        const targetMemory = JANU_MEMORIES[i];
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          localStorage.setItem(targetMemory.storageKey, base64String);
-          setCustomPhotos(prev => ({ ...prev, [targetMemory.storageKey]: base64String }));
-        };
-        reader.readAsDataURL(file);
+    const updated = { ...customPhotos };
+    const maxToUpload = Math.min(files.length, 20);
+
+    for (let i = 0; i < maxToUpload; i++) {
+      try {
+        setUploadProgress({ current: i + 1, total: maxToUpload });
+        const compressed = await compressImage(files[i], 1200, 0.85);
+        const storageKey = `janu_photo_${i + 1}`;
+        await savePhoto(storageKey, compressed);
+        updated[storageKey] = compressed;
+      } catch (err) {
+        console.error('Error saving photo:', err);
       }
     }
 
-    confetti({
-      particleCount: 100,
-      spread: 100,
-      origin: { y: 0.5 },
-      colors: ['#e11d48', '#f9a8d4', '#ffd700', '#ffffff', '#38bdf8']
-    });
+    setCustomPhotos(updated);
+    setIsUploading(false);
+    confetti({ particleCount: 50, spread: 80, origin: { y: 0.6 } });
+    setBackupMessage(`✨ Successfully saved ${maxToUpload} photos permanently into database!`);
+    setTimeout(() => setBackupMessage(null), 6000);
   };
 
-  const handleResetAll = () => {
-    JANU_MEMORIES.forEach(item => localStorage.removeItem(item.storageKey));
-    setCustomPhotos({});
+  const handleSinglePhotoChange = async (storageKey: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const compressed = await compressImage(file, 1200, 0.85);
+      await savePhoto(storageKey, compressed);
+      setCustomPhotos(prev => ({ ...prev, [storageKey]: compressed }));
+      confetti({ particleCount: 25, spread: 50, origin: { y: 0.7 } });
+    } catch (err) {
+      console.error('Error saving single photo:', err);
+    }
   };
 
-  const handleResetPhoto = (storageKey: string) => {
-    localStorage.removeItem(storageKey);
-    setCustomPhotos(prev => {
-      const updated = { ...prev };
-      delete updated[storageKey];
-      return updated;
-    });
+  const handleDownloadBackup = async () => {
+    try {
+      const jsonStr = await exportPhotosBackup();
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `janu_permanent_photos_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setBackupMessage('💾 Backup downloaded! You can restore this file anytime on Vercel or any phone.');
+      setTimeout(() => setBackupMessage(null), 6000);
+    } catch (e) {
+      alert('Error exporting backup.');
+    }
+  };
+
+  const handleRestoreBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      if (event.target?.result) {
+        try {
+          const count = await importPhotosBackup(event.target.result as string);
+          await loadPhotos();
+          confetti({ particleCount: 60, spread: 90, origin: { y: 0.5 } });
+          setBackupMessage(`🎉 Restored ${count} permanent photos from backup!`);
+          setTimeout(() => setBackupMessage(null), 6000);
+        } catch (err) {
+          alert('Invalid backup file.');
+        }
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleClearAll = async () => {
+    if (confirm('Are you sure you want to reset photos to default placeholders? You can re-upload anytime.')) {
+      await clearAllPhotos();
+      setCustomPhotos({});
+      setBackupMessage('🗑️ Photos reset to defaults.');
+      setTimeout(() => setBackupMessage(null), 4000);
+    }
   };
 
   const handleLike = (id: number) => {
@@ -309,38 +345,122 @@ export const JanuMemoryGallery: React.FC = () => {
           </p>
         </div>
 
-        {/* One-Click Bulk Importer Box */}
-        <div className="mt-6 bg-gradient-to-r from-[#fff1f2] via-white to-[#ffe4e6] p-6 rounded-3xl border-2 border-[#f9a8d4] shadow-xl max-w-3xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-2 text-[#e11d48] font-extrabold text-base mb-2">
-            <Upload className="w-5 h-5 animate-bounce" />
-            <span>One-Click Bulk Importer: Insert All 20 Janu Photos at Once!</span>
+        {/* Permanent Photo Hub Box */}
+        <div className="mt-8 bg-gradient-to-br from-[#fff1f2] via-white to-[#ffe4e6] p-6 sm:p-8 rounded-3xl border-2 border-[#f9a8d4] shadow-xl text-left relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#e11d48]/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#fbcfe8]">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-[#e11d48] text-white shadow-md">
+                <Database className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <h3 className="font-serif text-lg sm:text-xl font-bold text-[#4c0519] flex items-center gap-2">
+                  <span>📸 Permanent Photo Storage Engine (No Quota Limits)</span>
+                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> IndexedDB Active
+                  </span>
+                </h3>
+                <p className="text-xs text-[#881337]/90 font-medium mt-0.5">
+                  Why couldn't you see her photos earlier? Standard localStorage has a strict 5MB limit. This engine uses browser IndexedDB with automatic compression, storing all 20 of Janu's photos permanently without ever crashing!
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowManager(!showManager)}
+              className="text-xs font-bold text-[#e11d48] hover:text-[#881337] underline self-end sm:self-center"
+            >
+              {showManager ? 'Hide Uploader Hub' : 'Show Uploader Hub'}
+            </button>
           </div>
-          <p className="text-xs text-[#881337] mb-4 font-semibold max-w-xl mx-auto">
-            Want to add all 20 photos &amp; dreams you shared in chat? Click the button below, select up to 20 photos from your phone or PC at the same time, and they will automatically populate every card below!
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <label className="cursor-pointer bg-gradient-to-r from-[#e11d48] to-[#881337] hover:from-[#be123c] hover:to-[#4c0519] text-white py-3 px-6 rounded-2xl font-bold text-sm shadow-lg transform active:scale-95 transition-all flex items-center gap-2">
-              <Upload className="w-4 h-4" />
-              <span>Select All 20 Photos of Janu At Once</span>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleBulkUpload}
-                className="hidden"
-              />
-            </label>
 
-            {Object.keys(customPhotos).length > 0 && (
-              <button
-                onClick={handleResetAll}
-                className="bg-white hover:bg-rose-50 text-[#881337] border border-[#fbcfe8] py-3 px-4 rounded-2xl font-bold text-xs shadow-md transition-all flex items-center gap-1.5"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset All Photos</span>
-              </button>
-            )}
-          </div>
+          {backupMessage && (
+            <div className="mt-4 p-3 bg-emerald-50 border border-emerald-300 rounded-2xl text-emerald-800 text-xs font-bold flex items-center gap-2 animate-fade-in shadow-xs">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <span>{backupMessage}</span>
+            </div>
+          )}
+
+          {showManager && (
+            <div className="mt-6 space-y-6">
+              {/* Step 1: Bulk Upload */}
+              <div className="bg-white/80 p-5 rounded-2xl border border-[#fbcfe8] shadow-xs space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#e11d48] flex items-center gap-1.5">
+                    <Upload className="w-4 h-4" /> 1. One-Click Bulk Permanent Upload (All 20 Photos)
+                  </span>
+                  <span className="text-[11px] font-semibold text-[#881337]">
+                    {Object.keys(customPhotos).length} / 20 Photos Stored in Database
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600">
+                  Select all 20 photos of Janu from your gallery at once! They will be automatically compressed, optimized, and saved permanently into the database so they never disappear when you reload or open the app.
+                </p>
+                <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                  <label className="w-full sm:w-auto cursor-pointer bg-gradient-to-r from-[#e11d48] to-[#be123c] hover:from-[#be123c] hover:to-[#9f1239] text-white font-bold px-6 py-3 rounded-2xl shadow-lg flex items-center justify-center gap-2 text-xs sm:text-sm transform active:scale-95 transition-all">
+                    <Upload className="w-4 h-4" />
+                    <span>{isUploading ? `Saving ${uploadProgress.current}/${uploadProgress.total}...` : '⚡ Select & Save Her Photos Permanently'}</span>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleBulkUpload}
+                      disabled={isUploading}
+                      className="hidden"
+                    />
+                  </label>
+                  {isUploading && (
+                    <div className="w-full sm:flex-1 bg-rose-100 rounded-full h-3 overflow-hidden border border-rose-200">
+                      <div
+                        className="bg-[#e11d48] h-full transition-all duration-300 rounded-full"
+                        style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Step 2: Backup & Restore for Vercel / Cross-Device */}
+              <div className="bg-gradient-to-r from-rose-50 to-pink-50 p-5 rounded-2xl border border-rose-200/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="text-xs font-extrabold text-[#4c0519] flex items-center gap-1.5">
+                    <Download className="w-4 h-4 text-[#e11d48]" /> 2. Cross-Device &amp; Vercel Backup Engine
+                  </div>
+                  <p className="text-xs text-[#881337]">
+                    Deploying to Vercel or moving to your phone? Click <strong>Download Backup</strong> to save all 20 photos in a single `.json` file. Then on Vercel or your phone, click <strong>Restore Backup</strong> to load them instantly!
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={handleDownloadBackup}
+                    className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-white hover:bg-rose-50 border border-rose-300 text-[#e11d48] font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Download Backup (.json)
+                  </button>
+                  <label className="flex-1 sm:flex-initial cursor-pointer px-4 py-2.5 rounded-xl bg-[#4c0519] hover:bg-[#881337] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all">
+                    <RefreshCw className="w-3.5 h-3.5" /> Restore Backup
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={handleRestoreBackup}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Step 3: Reset option */}
+              {Object.keys(customPhotos).length > 0 && (
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={handleClearAll}
+                    className="text-xs font-semibold text-rose-500 hover:text-rose-700 flex items-center gap-1 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Reset all photos to default placeholders
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -348,7 +468,7 @@ export const JanuMemoryGallery: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {JANU_MEMORIES.map((memory) => {
           const currentImg = customPhotos[memory.storageKey] || memory.defaultUrl;
-          const isCustom = !!customPhotos[memory.storageKey];
+          const isPermanent = !!customPhotos[memory.storageKey];
           const likes = likeCounts[memory.id] || 200;
 
           return (
@@ -371,12 +491,13 @@ export const JanuMemoryGallery: React.FC = () => {
                   <span>{memory.tag}</span>
                 </div>
 
-                {/* Custom Photo Indicator or Upload Status */}
-                {isCustom ? (
-                  <div className="absolute top-3 right-3 bg-[#e11d48] text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-md flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Saved!
+                {/* Permanent DB Badge */}
+                {isPermanent && (
+                  <div className="absolute top-3 right-3 bg-emerald-600/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-black text-white shadow-sm flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>Saved in DB</span>
                   </div>
-                ) : null}
+                )}
 
                 {/* Hover Action Bar / Zoom */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#4c0519]/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-between p-4">
@@ -386,15 +507,6 @@ export const JanuMemoryGallery: React.FC = () => {
                   >
                     <ZoomIn className="w-3.5 h-3.5 text-[#e11d48]" /> View Zoom
                   </button>
-                  {isCustom && (
-                    <button
-                      onClick={() => handleResetPhoto(memory.storageKey)}
-                      className="bg-rose-900/80 hover:bg-rose-950 text-white px-2.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1 shadow-lg"
-                      title="Reset to default placeholder"
-                    >
-                      <RotateCcw className="w-3 h-3" /> Reset
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -413,25 +525,24 @@ export const JanuMemoryGallery: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Upload & Like Footer */}
+                {/* Like Footer with Individual Uploader */}
                 <div className="mt-4 pt-3 border-t border-[#fbcfe8] flex items-center justify-between gap-2">
-                  <label className="flex-1 cursor-pointer bg-[#fff1f2] hover:bg-[#ffe4e6] border border-[#f9a8d4] text-[#e11d48] py-1.5 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all shadow-2xs group/btn">
-                    <Upload className="w-3.5 h-3.5 text-[#e11d48] group-hover/btn:scale-110 transition-transform" />
-                    <span>{isCustom ? "Change Photo" : "Upload Her Photo"}</span>
+                  <label className="flex-1 cursor-pointer bg-white/90 hover:bg-white text-[#4c0519] border border-rose-200 px-3 py-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all">
+                    <Camera className="w-3.5 h-3.5 text-[#e11d48]" />
+                    <span>{isPermanent ? 'Change Photo' : 'Upload Her Photo'}</span>
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => handleFileUpload(memory.storageKey, e)}
+                      onChange={(e) => handleSinglePhotoChange(memory.storageKey, e)}
                       className="hidden"
                     />
                   </label>
-
                   <button
                     onClick={() => handleLike(memory.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 hover:bg-rose-50 border border-[#fbcfe8] text-[#e11d48] font-mono text-xs font-bold transition-all active:scale-90 shadow-2xs"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#fff1f2] to-[#ffe4e6] hover:from-[#ffe4e6] hover:to-[#fbcfe8] border border-[#f9a8d4] text-[#e11d48] font-mono text-[11px] font-bold transition-all active:scale-95 shadow-2xs group/like"
                   >
-                    <Heart className="w-3.5 h-3.5 fill-current text-[#e11d48]" />
-                    <span>{likes}</span>
+                    <Heart className="w-3.5 h-3.5 fill-current text-[#e11d48] group-hover/like:scale-125 transition-transform" />
+                    <span>Love ({likes})</span>
                   </button>
                 </div>
               </div>

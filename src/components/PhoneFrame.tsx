@@ -3,17 +3,11 @@ import { Smartphone, Monitor, Edit3, Heart, Sparkles, Share2, Check, ShieldCheck
 
 interface PhoneFrameProps {
   children: React.ReactNode;
-  onOpenCustomizer: () => void;
-  isCreatorMode: boolean;
-  onToggleCreatorMode: () => void;
   herName: string;
 }
 
 export const PhoneFrame: React.FC<PhoneFrameProps> = ({
   children,
-  onOpenCustomizer,
-  isCreatorMode,
-  onToggleCreatorMode,
   herName
 }) => {
   const [inPhoneFrame, setInPhoneFrame] = useState(true);
@@ -84,15 +78,6 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
                 <span>Share With Her</span>
               </>
             )}
-          </button>
-
-          {/* Customize Mode Toggle */}
-          <button
-            onClick={onOpenCustomizer}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#e11d48] to-[#881337] hover:from-[#be123c] hover:to-[#4c0519] text-white text-xs font-bold shadow-md shadow-rose-500/20 transition-transform active:scale-95"
-          >
-            <Edit3 className="w-3.5 h-3.5" />
-            <span>✏️ Customize</span>
           </button>
         </div>
       </header>

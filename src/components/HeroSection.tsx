@@ -4,10 +4,9 @@ import { AppConfig } from '../types';
 
 interface HeroSectionProps {
   config: AppConfig;
-  onOpenCustomizer: () => void;
 }
 
-export const HeroSection: React.FC<HeroSectionProps> = ({ config, onOpenCustomizer }) => {
+export const HeroSection: React.FC<HeroSectionProps> = ({ config }) => {
   const [daysKnown, setDaysKnown] = useState<number>(0);
   const [daysToMeet, setDaysToMeet] = useState<number | null>(null);
 

@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { Camera, Heart, MapPin, Calendar, X, ZoomIn, Plus, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { PhotoItem } from '../types';
 import confetti from 'canvas-confetti';
+import { compressImage, savePhoto } from '../utils/photoStorage';
 
 interface PhotoGalleryProps {
   photos: PhotoItem[];
   onAddPhoto?: (photo: PhotoItem) => void;
-  isCreatorMode?: boolean;
 }
 
-export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, onAddPhoto, isCreatorMode }) => {
+export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, onAddPhoto }) => {
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoItem | null>(null);
   const [likesMap, setLikesMap] = useState<Record<string, number>>({});
   const [showAddModal, setShowAddModal] = useState(false);
@@ -32,24 +32,25 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, onAddPhoto, 
     });
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setNewUrl(event.target.result as string);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImage(file, 1000, 0.85);
+      setNewUrl(compressed);
+    } catch (err) {
+      console.error('Error compressing polaroid:', err);
+    }
   };
 
-  const handleSubmitNewPhoto = (e: React.FormEvent) => {
+  const handleSubmitNewPhoto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUrl || !newCaption) return;
+    const photoId = 'polaroid_' + Date.now();
+    await savePhoto(photoId, newUrl);
     if (onAddPhoto) {
       onAddPhoto({
-        id: 'photo_' + Date.now(),
+        id: photoId,
         url: newUrl,
         caption: newCaption,
         date: newDate,
@@ -77,16 +78,14 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, onAddPhoto, 
         <p className="text-xs sm:text-sm text-slate-400 mt-1">
           Moments captured across screens and dreams of our future
         </p>
-
-        {isCreatorMode && (
+        <div className="mt-4 flex justify-center">
           <button
             onClick={() => setShowAddModal(true)}
-            className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold shadow-lg shadow-rose-500/30 transition-all active:scale-95"
+            className="px-5 py-2.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg transform active:scale-95 transition-all"
           >
-            <Plus className="w-4 h-4" />
-            <span>Add Custom Photo / Screenshot</span>
+            <Plus className="w-4 h-4" /> Add Permanent Polaroid
           </button>
-        )}
+        </div>
       </div>
 
       {/* Grid of Polaroid Cards */}
@@ -200,7 +199,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, onAddPhoto, 
         </div>
       )}
 
-      {/* Add Custom Photo Modal (For Creator Mode) */}
+      {/* Add Permanent Polaroid Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-rose-500/40 rounded-3xl p-6 max-w-md w-full text-white relative shadow-2xl">

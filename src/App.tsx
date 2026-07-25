@@ -10,7 +10,6 @@ import { LoveJar } from './components/LoveJar';
 import { BirthdayCake } from './components/BirthdayCake';
 import { MusicPlayer } from './components/MusicPlayer';
 import { PhoneFrame } from './components/PhoneFrame';
-import { CustomizerModal } from './components/CustomizerModal';
 import { VaishuUniverse } from './components/VaishuUniverse';
 import { ISTBirthdayCountdown } from './components/ISTBirthdayCountdown';
 import { JanuMemoryGallery } from './components/JanuMemoryGallery';
@@ -42,7 +41,6 @@ export default function App() {
   });
 
   const [isOpened, setIsOpened] = useState(false);
-  const [isCreatorMode, setIsCreatorMode] = useState(false);
   const [autoPlayMusic, setAutoPlayMusic] = useState(false);
 
   const handleSaveConfig = (newConfig: AppConfig) => {
@@ -90,15 +88,11 @@ export default function App() {
       {/* Main Page Content Inside Phone Frame / Fullscreen */}
       <PhoneFrame
         herName={config.herName}
-        isCreatorMode={isCreatorMode}
-        onToggleCreatorMode={() => setIsCreatorMode(!isCreatorMode)}
-        onOpenCustomizer={() => setIsCreatorMode(true)}
       >
         <div className="space-y-12 pb-8">
           {/* Hero Section */}
           <HeroSection
             config={config}
-            onOpenCustomizer={() => setIsCreatorMode(true)}
           />
 
           {/* Indian Standard Time 00:00 Birthday Countdown & Reveal */}
@@ -126,7 +120,6 @@ export default function App() {
           <PhotoGallery
             photos={config.photos}
             onAddPhoto={handleAddPhoto}
-            isCreatorMode={isCreatorMode}
           />
 
           {/* Infinite Wishing Jar */}
@@ -154,27 +147,13 @@ export default function App() {
               "Until the day we stand together under the Northern Lights, let my love wrap around you like a warm blanket."
             </p>
             <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-[#881337]/70 font-mono">
-              <button
-                onClick={() => setIsCreatorMode(true)}
-                className="text-[#e11d48] hover:text-[#be123c] underline font-bold"
-              >
-                ✏️ Customize Page
-              </button>
+              <span className="text-[#e11d48] font-bold">✨ Designed Exclusively for Janu ✨</span>
               <span>•</span>
               <span>Made with ❤️ across the miles</span>
             </div>
           </footer>
         </div>
       </PhoneFrame>
-
-      {/* Creator Customization Modal */}
-      {isCreatorMode && (
-        <CustomizerModal
-          config={config}
-          onSave={handleSaveConfig}
-          onClose={() => setIsCreatorMode(false)}
-        />
-      )}
     </>
   );
 }
