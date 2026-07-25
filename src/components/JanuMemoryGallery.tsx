@@ -345,141 +345,6 @@ export const JanuMemoryGallery: React.FC = () => {
           </p>
         </div>
 
-        {/* Permanent Photo Hub Box */}
-        <div className="mt-8 bg-gradient-to-br from-[#fff1f2] via-white to-[#ffe4e6] p-6 sm:p-8 rounded-3xl border-2 border-[#f9a8d4] shadow-xl text-left relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#e11d48]/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#fbcfe8]">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-[#e11d48] text-white shadow-md">
-                <Database className="w-6 h-6 animate-pulse" />
-              </div>
-              <div>
-                <h3 className="font-serif text-lg sm:text-xl font-bold text-[#4c0519] flex items-center gap-2">
-                  <span>📸 Permanent Photo Storage Engine (No Quota Limits)</span>
-                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> IndexedDB Active
-                  </span>
-                </h3>
-                <p className="text-xs text-[#881337]/90 font-medium mt-0.5">
-                  Why couldn't you see her photos earlier? Standard localStorage has a strict 5MB limit. This engine uses browser IndexedDB with automatic compression, storing all 20 of Janu's photos permanently without ever crashing!
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowManager(!showManager)}
-              className="text-xs font-bold text-[#e11d48] hover:text-[#881337] underline self-end sm:self-center"
-            >
-              {showManager ? 'Hide Uploader Hub' : 'Show Uploader Hub'}
-            </button>
-          </div>
-
-          {backupMessage && (
-            <div className="mt-4 p-3 bg-emerald-50 border border-emerald-300 rounded-2xl text-emerald-800 text-xs font-bold flex items-center gap-2 animate-fade-in shadow-xs">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              <span>{backupMessage}</span>
-            </div>
-          )}
-
-          {showManager && (
-            <div className="mt-6 space-y-6">
-              {/* GitHub / Vercel Transfer Explanation Box */}
-              <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 p-5 rounded-2xl border-2 border-indigo-200 shadow-md text-left space-y-2">
-                <h4 className="text-xs sm:text-sm font-extrabold text-indigo-950 flex items-center gap-2">
-                  <span>❓ Why can't I access my uploaded photos after transferring to GitHub or Vercel?</span>
-                </h4>
-                <p className="text-xs text-indigo-900/90 leading-relaxed">
-                  <strong>The Reason:</strong> For security, web browsers isolate databases by web domain. When you upload photos here, they are stored inside your browser for this <em>AI Studio preview link</em>. When you transfer to GitHub or deploy to Vercel, it creates a brand new web link, so the new link opens with a fresh, empty database!
-                </p>
-                <div className="bg-white/90 p-3.5 rounded-xl border border-indigo-200/80 text-xs font-semibold text-indigo-950 space-y-1">
-                  <div className="font-extrabold text-[#e11d48]">⚡ How to fix it in 10 seconds (No coding required):</div>
-                  <ol className="list-decimal list-inside space-y-1 text-slate-700 font-medium">
-                    <li>Right here in this AI Studio preview, click the <strong>Download Backup (.json)</strong> button below to download all 20 of Janu&apos;s photos to your phone or computer.</li>
-                    <li>Open your new GitHub or Vercel website link on any device.</li>
-                    <li>Click <strong>Restore Backup</strong> on that new site and select the downloaded file. All 20 photos will instantly load and stay there forever!</li>
-                  </ol>
-                </div>
-              </div>
-
-              {/* Step 1: Bulk Upload */}
-              <div className="bg-white/80 p-5 rounded-2xl border border-[#fbcfe8] shadow-xs space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#e11d48] flex items-center gap-1.5">
-                    <Upload className="w-4 h-4" /> 1. One-Click Bulk Permanent Upload (All 20 Photos)
-                  </span>
-                  <span className="text-[11px] font-semibold text-[#881337]">
-                    {Object.keys(customPhotos).length} / 20 Photos Stored in Database
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600">
-                  Select all 20 photos of Janu from your gallery at once! They will be automatically compressed, optimized, and saved permanently into the database so they never disappear when you reload or open the app.
-                </p>
-                <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-                  <label className="w-full sm:w-auto cursor-pointer bg-gradient-to-r from-[#e11d48] to-[#be123c] hover:from-[#be123c] hover:to-[#9f1239] text-white font-bold px-6 py-3 rounded-2xl shadow-lg flex items-center justify-center gap-2 text-xs sm:text-sm transform active:scale-95 transition-all">
-                    <Upload className="w-4 h-4" />
-                    <span>{isUploading ? `Saving ${uploadProgress.current}/${uploadProgress.total}...` : '⚡ Select & Save Her Photos Permanently'}</span>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleBulkUpload}
-                      disabled={isUploading}
-                      className="hidden"
-                    />
-                  </label>
-                  {isUploading && (
-                    <div className="w-full sm:flex-1 bg-rose-100 rounded-full h-3 overflow-hidden border border-rose-200">
-                      <div
-                        className="bg-[#e11d48] h-full transition-all duration-300 rounded-full"
-                        style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Step 2: Backup & Restore for Vercel / Cross-Device */}
-              <div className="bg-gradient-to-r from-rose-50 to-pink-50 p-5 rounded-2xl border border-rose-200/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="text-xs font-extrabold text-[#4c0519] flex items-center gap-1.5">
-                    <Download className="w-4 h-4 text-[#e11d48]" /> 2. Cross-Device &amp; Vercel Backup Engine
-                  </div>
-                  <p className="text-xs text-[#881337]">
-                    Deploying to Vercel or moving to your phone? Click <strong>Download Backup</strong> to save all 20 photos in a single `.json` file. Then on Vercel or your phone, click <strong>Restore Backup</strong> to load them instantly!
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={handleDownloadBackup}
-                    className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-white hover:bg-rose-50 border border-rose-300 text-[#e11d48] font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all"
-                  >
-                    <Download className="w-3.5 h-3.5" /> Download Backup (.json)
-                  </button>
-                  <label className="flex-1 sm:flex-initial cursor-pointer px-4 py-2.5 rounded-xl bg-[#4c0519] hover:bg-[#881337] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all">
-                    <RefreshCw className="w-3.5 h-3.5" /> Restore Backup
-                    <input
-                      type="file"
-                      accept=".json"
-                      onChange={handleRestoreBackup}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-              </div>
-
-              {/* Step 3: Reset option */}
-              {Object.keys(customPhotos).length > 0 && (
-                <div className="flex justify-end pt-2">
-                  <button
-                    onClick={handleClearAll}
-                    className="text-xs font-semibold text-rose-500 hover:text-rose-700 flex items-center gap-1 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" /> Reset all photos to default placeholders
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* 3x3 Grid of Janu's Memories */}
@@ -590,6 +455,105 @@ export const JanuMemoryGallery: React.FC = () => {
             <div className="text-[10px] uppercase font-bold tracking-wider text-rose-100 mt-0.5">Together Forever</div>
           </div>
         </div>
+      </div>
+
+      {/* Discreet Secret Admin Button (Hidden from plain sight for Janu) */}
+      <div className="mt-10 text-center">
+        <button
+          onClick={() => setShowManager(!showManager)}
+          className="text-[11px] font-bold text-rose-400/70 hover:text-[#e11d48] transition-all inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-rose-200/50 hover:border-rose-300 bg-white/50 hover:bg-white shadow-xs"
+        >
+          <Database className="w-3.5 h-3.5" /> {showManager ? 'Hide Uploader Hub' : '⚙️ Album Storage & Backup (Kamalesh Only)'}
+        </button>
+
+        {showManager && (
+          <div className="mt-4 max-w-3xl mx-auto bg-white/95 p-6 sm:p-8 rounded-3xl border-2 border-[#f9a8d4] shadow-2xl text-left space-y-6 animate-fade-in">
+            {backupMessage && (
+              <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-2xl text-emerald-800 text-xs font-bold flex items-center gap-2 animate-fade-in shadow-xs">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span>{backupMessage}</span>
+              </div>
+            )}
+
+            {/* Step 1: Bulk Upload */}
+            <div className="bg-white/80 p-5 rounded-2xl border border-[#fbcfe8] shadow-xs space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-[#e11d48] flex items-center gap-1.5">
+                  <Upload className="w-4 h-4" /> 1. One-Click Bulk Permanent Upload (All 20 Photos)
+                </span>
+                <span className="text-[11px] font-semibold text-[#881337]">
+                  {Object.keys(customPhotos).length} / 20 Photos Stored in Database
+                </span>
+              </div>
+              <p className="text-xs text-slate-600">
+                Select all 20 photos of Janu from your gallery at once! They will be automatically compressed, optimized, and saved permanently into the database so they never disappear when you reload or open the app.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                <label className="w-full sm:w-auto cursor-pointer bg-gradient-to-r from-[#e11d48] to-[#be123c] hover:from-[#be123c] hover:to-[#9f1239] text-white font-bold px-6 py-3 rounded-2xl shadow-lg flex items-center justify-center gap-2 text-xs sm:text-sm transform active:scale-95 transition-all">
+                  <Upload className="w-4 h-4" />
+                  <span>{isUploading ? `Saving ${uploadProgress.current}/${uploadProgress.total}...` : '⚡ Select & Save Her Photos Permanently'}</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleBulkUpload}
+                    disabled={isUploading}
+                    className="hidden"
+                  />
+                </label>
+                {isUploading && (
+                  <div className="w-full sm:flex-1 bg-rose-100 rounded-full h-3 overflow-hidden border border-rose-200">
+                    <div
+                      className="bg-[#e11d48] h-full transition-all duration-300 rounded-full"
+                      style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Step 2: Backup & Restore for Vercel / Cross-Device */}
+            <div className="bg-gradient-to-r from-rose-50 to-pink-50 p-5 rounded-2xl border border-rose-200/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="text-xs font-extrabold text-[#4c0519] flex items-center gap-1.5">
+                  <Download className="w-4 h-4 text-[#e11d48]" /> 2. Cross-Device &amp; Vercel Backup Engine
+                </div>
+                <p className="text-xs text-[#881337]">
+                  Deploying to Vercel or moving to your phone? Click <strong>Download Backup</strong> to save all 20 photos in a single `.json` file. Then on Vercel or your phone, click <strong>Restore Backup</strong> to load them instantly!
+                </p>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  onClick={handleDownloadBackup}
+                  className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-white hover:bg-rose-50 border border-rose-300 text-[#e11d48] font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all"
+                >
+                  <Download className="w-3.5 h-3.5" /> Download Backup (.json)
+                </button>
+                <label className="flex-1 sm:flex-initial cursor-pointer px-4 py-2.5 rounded-xl bg-[#4c0519] hover:bg-[#881337] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all">
+                  <RefreshCw className="w-3.5 h-3.5" /> Restore Backup
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleRestoreBackup}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Step 3: Reset option */}
+            {Object.keys(customPhotos).length > 0 && (
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={handleClearAll}
+                  className="text-xs font-semibold text-rose-500 hover:text-rose-700 flex items-center gap-1 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Reset all photos to default placeholders
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Zoom Modal */}

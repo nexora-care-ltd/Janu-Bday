@@ -26,11 +26,28 @@ This ensures that the AI Romantic Letter Generator works seamlessly on Vercel's 
 
 ---
 
-## 🛠️ What You Need to Do Now:
+## 🛠️ What You Need to Do Now (2 Simple Steps):
 
-1. **Push / Sync your latest code to GitHub**:
-   In AI Studio, export/sync your latest changes to your GitHub repository so that `vercel.json` is included.
-2. **Vercel will Auto-Deploy**:
-   As soon as you push to GitHub, Vercel will detect the new `vercel.json` file, rebuild the project in ~30 seconds, and **your website will load instantly without any 404 error!**
-3. **Don't forget your Photo Backup**:
-   Once your Vercel site is live, click the **`Restore Backup`** button in the Photo Gallery section and select the `.json` backup file you downloaded earlier from AI Studio. All 20 of Janu's photos will immediately appear!
+### Step 1: Sync / Push this updated code to GitHub
+In AI Studio, export/sync your latest changes to your GitHub repository so that the updated `vercel.json` (which now explicitly sets `"framework": "vite"`) is pushed to GitHub.
+
+### Step 2: Check your Vercel Project Settings (CRITICAL!)
+Because Vercel saw `server.ts` when you first imported the project, it likely selected **"Other"** or **"Node.js"** as the Framework Preset instead of Vite! Here is how to fix it in 5 seconds on Vercel:
+
+1. Open your project on **Vercel** (`vercel.com`).
+2. Click on the **Settings** tab at the top of your project dashboard.
+3. In the left sidebar, click **General** (if not already selected).
+4. Look for the **Framework Preset** section.
+5. If it says *Other* or *Node.js*, click the dropdown menu and select **Vite**!
+6. Click **Save**.
+7. Now go to the **Deployments** tab at the top, click the three dots (`...`) next to your latest deployment, and click **Redeploy**!
+
+🎉 **Your website will instantly load without any 404 error!**
+
+---
+
+### Step 3: Restore Janu's Photos
+Once your Vercel site is live and loading properly:
+1. Scroll down to the **Permanent Photo Storage Engine** box in the Photo Gallery section.
+2. Click the dark red **`Restore Backup`** button and select the `.json` backup file you downloaded earlier from AI Studio.
+3. All 20 of Janu's photos will immediately appear on your Vercel website!
