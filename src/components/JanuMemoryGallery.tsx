@@ -382,6 +382,24 @@ export const JanuMemoryGallery: React.FC = () => {
 
           {showManager && (
             <div className="mt-6 space-y-6">
+              {/* GitHub / Vercel Transfer Explanation Box */}
+              <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 p-5 rounded-2xl border-2 border-indigo-200 shadow-md text-left space-y-2">
+                <h4 className="text-xs sm:text-sm font-extrabold text-indigo-950 flex items-center gap-2">
+                  <span>❓ Why can't I access my uploaded photos after transferring to GitHub or Vercel?</span>
+                </h4>
+                <p className="text-xs text-indigo-900/90 leading-relaxed">
+                  <strong>The Reason:</strong> For security, web browsers isolate databases by web domain. When you upload photos here, they are stored inside your browser for this <em>AI Studio preview link</em>. When you transfer to GitHub or deploy to Vercel, it creates a brand new web link, so the new link opens with a fresh, empty database!
+                </p>
+                <div className="bg-white/90 p-3.5 rounded-xl border border-indigo-200/80 text-xs font-semibold text-indigo-950 space-y-1">
+                  <div className="font-extrabold text-[#e11d48]">⚡ How to fix it in 10 seconds (No coding required):</div>
+                  <ol className="list-decimal list-inside space-y-1 text-slate-700 font-medium">
+                    <li>Right here in this AI Studio preview, click the <strong>Download Backup (.json)</strong> button below to download all 20 of Janu&apos;s photos to your phone or computer.</li>
+                    <li>Open your new GitHub or Vercel website link on any device.</li>
+                    <li>Click <strong>Restore Backup</strong> on that new site and select the downloaded file. All 20 photos will instantly load and stay there forever!</li>
+                  </ol>
+                </div>
+              </div>
+
               {/* Step 1: Bulk Upload */}
               <div className="bg-white/80 p-5 rounded-2xl border border-[#fbcfe8] shadow-xs space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
